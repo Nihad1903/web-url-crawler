@@ -1,0 +1,7 @@
+aiohttp>=3.10,<4.0
+beautifulsoup4>=4.12,<5.0
+lxml>=5.2,<7.0
+python-dotenv>=1.0,<2.0
+
+# Optional JavaScript rendering (install manually when ENABLE_PLAYWRIGHT=true):
+# playwright>=1.46,<2.0
