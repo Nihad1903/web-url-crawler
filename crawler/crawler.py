@@ -10,7 +10,7 @@ import aiohttp
 
 from .config import Settings
 from .exporter import export_results
-from .filters import content_type, is_html, is_internal, looks_like_file
+from .filters import content_type, is_excluded, is_html, is_internal, looks_like_file
 from .models import ExternalRecord, QueueItem, RedirectRecord, URLRecord, utc_now
 from .normalizer import ensure_scheme, normalize_url, origin
 from .parser import ParsedPage, parse_html
@@ -180,6 +180,8 @@ class WebsiteCrawler:
         )
         if url is None:
             return
+        if is_excluded(url, self.settings.exclude_path_patterns):
+            return
         if not is_internal(url, self.start_url, self.settings.allow_subdomains):
             if url not in self.external:
                 self.external[url] = ExternalRecord(url=url, source_url=source_url)
@@ -306,6 +308,8 @@ class WebsiteCrawler:
             keep_query_params=self.settings.keep_query_params,
         )
         if normalized is None or normalized == source_url:
+            return
+        if is_excluded(normalized, self.settings.exclude_path_patterns):
             return
         if is_internal(normalized, self.start_url, self.settings.allow_subdomains):
             self.discovered.add(normalized)

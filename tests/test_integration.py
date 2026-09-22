@@ -46,6 +46,7 @@ class SiteHandler(BaseHTTPRequestHandler):
                 <a href='/private/hidden'>Private</a><a href='/report.pdf'>PDF</a>
                 <a href='https://outside.test/x'>External</a>
                 <a href='mailto:a@example.com'>Mail</a>
+                <a href='/news/5543'>News</a>
                 <main>Welcome to the home page.</main>
                 </body></html>""",
                 "text/html; charset=utf-8",
@@ -101,6 +102,7 @@ class CrawlerIntegrationTests(unittest.IsolatedAsyncioTestCase):
             crawl_delay=0,
             max_retries=0,
             output_dir=self.temp_dir.name,
+            exclude_path_patterns=("/news",),
         )
         crawler = WebsiteCrawler(settings)
         stats = await crawler.run()
@@ -115,6 +117,8 @@ class CrawlerIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("https://outside.test/x", crawler.external)
         self.assertEqual(stats["broken_urls"], 1)
         self.assertEqual(stats["redirects"], 1)
+        self.assertNotIn(f"{SiteHandler.base_url}/news/5543", crawler.discovered)
+        self.assertFalse(any("/news" in url for url in crawler.discovered))
 
         output = Path(self.temp_dir.name)
         for name in (

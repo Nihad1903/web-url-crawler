@@ -3,7 +3,7 @@ from __future__ import annotations
 import gzip
 import unittest
 
-from crawler.filters import is_internal, looks_like_file
+from crawler.filters import is_excluded, is_internal, looks_like_file
 from crawler.normalizer import normalize_url
 from crawler.robots import parse_robots
 from crawler.sitemap import decode_sitemap, parse_sitemap
@@ -32,6 +32,11 @@ class URLTests(unittest.TestCase):
         self.assertTrue(is_internal("https://cdn.example.com/a", "https://example.com", True))
         self.assertFalse(is_internal("https://notexample.com/a", "https://example.com", True))
         self.assertTrue(looks_like_file("https://example.com/report.PDF?download=1"))
+
+    def test_path_exclusion(self) -> None:
+        self.assertTrue(is_excluded("https://example.com/az/news/5543", ("/news",)))
+        self.assertFalse(is_excluded("https://example.com/az/pages/66", ("/news",)))
+        self.assertFalse(is_excluded("https://example.com/az/pages/66", ()))
 
 
 class DiscoveryDocumentTests(unittest.TestCase):

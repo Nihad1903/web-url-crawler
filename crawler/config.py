@@ -37,6 +37,11 @@ def _float(name: str, default: float) -> float:
         raise SettingsError(f"{name} must be a number") from exc
 
 
+def _list(name: str) -> tuple[str, ...]:
+    value = os.getenv(name, "")
+    return tuple(item.strip() for item in value.split(",") if item.strip())
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     start_url: str = ""
@@ -56,6 +61,7 @@ class Settings:
     verify_ssl: bool = True
     max_response_bytes: int = 5_000_000
     output_dir: str = "output"
+    exclude_path_patterns: tuple[str, ...] = ()
 
     @classmethod
     def from_env(cls, env_file: str | Path = ".env") -> "Settings":
@@ -78,6 +84,7 @@ class Settings:
             verify_ssl=_bool("VERIFY_SSL", True),
             max_response_bytes=_int("MAX_RESPONSE_BYTES", 5_000_000),
             output_dir=os.getenv("OUTPUT_DIR", "output").strip(),
+            exclude_path_patterns=_list("EXCLUDE_PATH_PATTERNS"),
         )
 
     def validate(self) -> None:

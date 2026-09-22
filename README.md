@@ -132,6 +132,7 @@ semantic tags may still have some of that text mixed into `content`.
 | `USER_AGENT` | `WebsiteURLCrawler/1.0` | HTTP and robots user agent |
 | `ALLOW_SUBDOMAINS` | `false` | Allow hosts below the starting hostname |
 | `KEEP_QUERY_PARAMS` | `false` | Preserve query strings during normalization |
+| `EXCLUDE_PATH_PATTERNS` | *(empty)* | Comma-separated substrings; matching URL paths are skipped entirely |
 | `RESPECT_ROBOTS_TXT` | `true` | Apply robots allow/disallow rules |
 | `ENABLE_SITEMAP` | `true` | Discover and recursively parse sitemaps |
 | `ENABLE_PLAYWRIGHT` | `false` | Render linkless HTML with Chromium |

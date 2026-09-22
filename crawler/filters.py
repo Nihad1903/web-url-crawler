@@ -34,3 +34,10 @@ def is_html(value: str | None) -> bool:
 
 def looks_like_file(url: str) -> bool:
     return PurePosixPath(urlsplit(url).path.lower()).suffix in FILE_EXTENSIONS
+
+
+def is_excluded(url: str, patterns: tuple[str, ...]) -> bool:
+    if not patterns:
+        return False
+    path = urlsplit(url).path.lower()
+    return any(pattern.lower() in path for pattern in patterns)
