@@ -39,17 +39,23 @@ class SiteHandler(BaseHTTPRequestHandler):
         elif path == "/":
             self._send(
                 200,
-                """<html><body>
+                """<html><head><title>Home</title></head><body>
+                <nav>Menu</nav>
                 <a href='/about/'>About</a><a href='/about?copy=1#x'>Duplicate</a>
                 <a href='/redirect'>Redirect</a><a href='/broken'>Broken</a>
                 <a href='/private/hidden'>Private</a><a href='/report.pdf'>PDF</a>
                 <a href='https://outside.test/x'>External</a>
                 <a href='mailto:a@example.com'>Mail</a>
+                <main>Welcome to the home page.</main>
                 </body></html>""",
                 "text/html; charset=utf-8",
             )
         elif path in {"/about", "/from-sitemap", "/final"}:
-            self._send(200, "<html><body>done</body></html>", "text/html")
+            self._send(
+                200,
+                "<html><head><title>Done</title></head><body>done</body></html>",
+                "text/html",
+            )
         elif path == "/redirect":
             self.send_response(302)
             self.send_header("Location", "/final")
@@ -113,11 +119,20 @@ class CrawlerIntegrationTests(unittest.IsolatedAsyncioTestCase):
         output = Path(self.temp_dir.name)
         for name in (
             "urls.txt", "pages.csv", "files.csv", "external_urls.csv",
-            "broken_urls.csv", "redirects.csv", "stats.json",
+            "broken_urls.csv", "redirects.csv", "stats.json", "content.jsonl",
         ):
             self.assertTrue((output / name).is_file())
         saved_stats = json.loads((output / "stats.json").read_text())
         self.assertEqual(saved_stats["start_url"], f"{SiteHandler.base_url}/")
+
+        content_rows = [
+            json.loads(line)
+            for line in (output / "content.jsonl").read_text().splitlines()
+        ]
+        home_row = next(row for row in content_rows if row["url"] == SiteHandler.base_url + "/")
+        self.assertEqual(home_row["title"], "Home")
+        self.assertEqual(home_row["content"], "Welcome to the home page.")
+        self.assertNotIn("Menu", home_row["content"])
 
 
 if __name__ == "__main__":

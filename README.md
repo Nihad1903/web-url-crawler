@@ -96,7 +96,8 @@ Every run rewrites the configured output files:
 ```text
 output/
 ├── urls.txt             # all unique discovered internal URLs
-├── pages.csv            # HTML response metadata
+├── pages.csv            # HTML response metadata (incl. page title)
+├── content.jsonl        # one JSON object per crawled page: url, title, content
 ├── files.csv            # file/non-HTML URLs and available metadata
 ├── external_urls.csv    # links outside the allowed domain boundary
 ├── broken_urls.csv      # HTTP 400+ and request failures
@@ -104,9 +105,17 @@ output/
 └── stats.json           # aggregate crawl statistics
 ```
 
-`pages.csv` contains `url`, `status_code`, `content_type`, `source_url`, `depth`,
-and `final_url`. Detail outputs also retain discovery timestamps, response times,
-and error messages where relevant.
+`pages.csv` contains `url`, `title`, `status_code`, `content_type`, `source_url`,
+`depth`, and `final_url`. Detail outputs also retain discovery timestamps, response
+times, and error messages where relevant.
+
+`content.jsonl` holds the readable content of every successfully crawled HTML page,
+one JSON object per line (`{"url": ..., "title": ..., "content": ...}`) — a
+convenient format for indexing, search, or feeding into other tools. `<script>`,
+`<style>`, `<nav>`, `<header>`, `<footer>`, and `<aside>` tags are stripped before
+extraction, and text is taken from `<main>`/`<article>` when present, otherwise
+`<body>`. Sites that build menus/boilerplate from plain `<div>`s instead of those
+semantic tags may still have some of that text mixed into `content`.
 
 ## Configuration
 

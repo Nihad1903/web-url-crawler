@@ -13,7 +13,7 @@ from .exporter import export_results
 from .filters import content_type, is_html, is_internal, looks_like_file
 from .models import ExternalRecord, QueueItem, RedirectRecord, URLRecord, utc_now
 from .normalizer import ensure_scheme, normalize_url, origin
-from .parser import parse_html
+from .parser import ParsedPage, parse_html
 from .playwright_renderer import PlaywrightRenderer
 from .robots import RobotsPolicy, parse_robots
 from .sitemap import decode_sitemap, parse_sitemap
@@ -227,6 +227,9 @@ class WebsiteCrawler:
             )
             elapsed_ms = round((time.monotonic() - started) * 1000, 2)
             media_type = content_type(headers.get("Content-Type"))
+            parsed = None
+            if is_html(media_type) and status < 400:
+                parsed = await self._parse_page(body, final_url)
             record = URLRecord(
                 item.url,
                 status,
@@ -236,6 +239,8 @@ class WebsiteCrawler:
                 final_url,
                 item.discovered_at,
                 elapsed_ms,
+                title=parsed.title if parsed else "",
+                content=parsed.text if parsed else "",
             )
             self._record_redirects(history)
             self._remember_final_url(final_url, item.url)
@@ -244,8 +249,8 @@ class WebsiteCrawler:
             if is_html(media_type):
                 self.pages.append(record)
                 LOGGER.info("[%s] %s", status, item.url)
-                if status < 400:
-                    await self._parse_and_discover(body, final_url, item.depth + 1)
+                if parsed is not None:
+                    self._discover_links(parsed, final_url, item.depth + 1)
             else:
                 self._upsert_fetched_file(record)
                 LOGGER.info("[FILE] %s", item.url)
@@ -264,13 +269,16 @@ class WebsiteCrawler:
             self.broken.append(record)
             LOGGER.error("[ERROR] %s: %s", item.url, exc)
 
-    async def _parse_and_discover(self, body: bytes, base_url: str, depth: int) -> None:
+    async def _parse_page(self, body: bytes, base_url: str) -> ParsedPage:
         parsed = parse_html(body)
         if not parsed.links and self._renderer is not None:
             try:
                 parsed = parse_html(await self._renderer.render(base_url))
             except Exception as exc:
                 LOGGER.warning("Playwright fallback failed for %s: %s", base_url, exc)
+        return parsed
+
+    def _discover_links(self, parsed: ParsedPage, base_url: str, depth: int) -> None:
         for link in parsed.links:
             self._discover(link, base_url, depth, "html")
         if parsed.canonical:

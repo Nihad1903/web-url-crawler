@@ -22,11 +22,20 @@ def export_results(
 ) -> None:
     directory = Path(output_dir)
     directory.mkdir(parents=True, exist_ok=True)
+    pages = list(pages)
     _write_lines(directory / "urls.txt", sorted(set(internal_urls)))
     _write_csv(
         directory / "pages.csv",
         (asdict(record) for record in pages),
-        ["url", "status_code", "content_type", "source_url", "depth", "final_url"],
+        ["url", "title", "status_code", "content_type", "source_url", "depth", "final_url"],
+    )
+    _write_jsonl(
+        directory / "content.jsonl",
+        (
+            {"url": record.url, "title": record.title, "content": record.content}
+            for record in pages
+            if record.content
+        ),
     )
     detail_fields = [
         "url", "status_code", "content_type", "source_url", "depth", "final_url",
@@ -60,3 +69,10 @@ def _write_csv(path: Path, rows: Iterable[dict[str, object]], fields: list[str])
         writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _write_jsonl(path: Path, rows: Iterable[dict[str, object]]) -> None:
+    with path.open("w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False))
+            handle.write("\n")

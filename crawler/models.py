@@ -28,6 +28,8 @@ class URLRecord:
     discovered_at: str
     response_time_ms: float | None = None
     error: str = ""
+    title: str = ""
+    content: str = ""
 
 
 @dataclass(frozen=True, slots=True)
